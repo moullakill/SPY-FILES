@@ -2,76 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Gallery</title>
-  <style>
-    body {
-      background: #000;
-      color: #fff;
-      font-family: sans-serif;
-      text-align: center;
-      margin: 0;
-    }
-    #login, #gallery { display: none; }
-    .gallery-img {
-      max-width: 300px;
-      margin: 10px;
-      border: 3px solid #fff;
-      border-radius: 10px;
-    }
-  </style>
+  <title>SPY GALLERY</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div id="login">
-    <h2>Enter Password</h2>
-    <input type="password" id="pwd" placeholder="Password">
-    <button onclick="verify()">Access</button>
-    <p id="msg" style="color:red;"></p>
+<body class="bg-gray-900 text-white font-sans">
+  <div class="min-h-screen flex items-center justify-center p-4" id="auth-section">
+    <div class="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
+      <h2 class="text-2xl font-bold mb-4">Accès à la Galerie</h2>
+      <input type="password" id="password" placeholder="Mot de passe"
+             class="w-full p-2 rounded mb-4 text-black" />
+      <button onclick="checkPassword()" class="bg-blue-600 hover:bg-blue-700 w-full py-2 rounded text-white">
+        Accéder
+      </button>
+      <p id="error" class="text-red-500 mt-3 hidden">Mot de passe incorrect.</p>
+    </div>
   </div>
 
-  <div id="gallery">
-    <h1>Secret Gallery</h1>
-    <div id="images"></div>
+  <div id="gallery-section" class="hidden p-6">
+    <h1 class="text-3xl font-bold mb-6 text-center">🕵️‍♂️ Spy Gallery</h1>
+    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
   </div>
 
   <script>
-    const storedHash = "4fa4e0f5bb2c8cece450f2f5d62128a764e76d5540b0fa2e57b8b243546688d4"; // SHA-256 of "coffee 007"
+    const PASSWORD = "coffee 007"; // ici en clair, à ne pas exposer pour un usage sérieux
+    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
 
-    document.getElementById("login").style.display = "block";
-
-    async function verify() {
-      const password = document.getElementById("pwd").value;
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
-      if (hashHex === storedHash) {
+    function checkPassword() {
+      const input = document.getElementById('password').value.trim();
+      if (input === PASSWORD) {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('gallery-section').classList.remove('hidden');
         loadGallery();
-        document.getElementById("login").style.display = "none";
-        document.getElementById("gallery").style.display = "block";
       } else {
-        document.getElementById("msg").textContent = "Wrong password";
+        document.getElementById('error').classList.remove('hidden');
       }
     }
 
     async function loadGallery() {
-      const response = await fetch("https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt");
-      const text = await response.text();
-      const lines = text.split("\n").filter(line => line.startsWith("img:"));
+      try {
+        const res = await fetch(GITHUB_RAW_URL);
+        const text = await res.text();
+        const lines = text.split('\n');
+        const gallery = document.getElementById('gallery');
+        const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
-      for (const line of lines) {
-        try {
-          const base64 = line.split("img:")[1].trim();
-          const decoded = atob(base64); // Not strictly necessary here
-          const img = document.createElement("img");
-          img.className = "gallery-img";
-          img.src = "data:image/*;base64," + base64;
-          document.getElementById("images").appendChild(img);
-        } catch (err) {
-          console.error("Error decoding image:", err);
-        }
+        lines.forEach(line => {
+          if (!line.includes(':')) return;
+          const [uid, base64] = line.split(':');
+          const cleanBase64 = base64.trim();
+
+          const mimeType = getMimeType(cleanBase64);
+          if (!mimeType) return;
+
+          const ext = mimeType.split('/')[1];
+          if (!validExtensions.includes(ext)) return;
+
+          const img = document.createElement('img');
+          img.src = `data:${mimeType};base64,${cleanBase64}`;
+          img.alt = uid;
+          img.className = "rounded-xl shadow-lg w-full object-cover h-64";
+          gallery.appendChild(img);
+        });
+      } catch (error) {
+        console.error("Erreur de chargement :", error);
       }
+    }
+
+    function getMimeType(b64) {
+      if (b64.startsWith('/9j/')) return 'image/jpeg';
+      if (b64.startsWith('iVBOR')) return 'image/png';
+      if (b64.startsWith('R0lGOD')) return 'image/gif';
+      if (b64.startsWith('UklGR')) return 'image/webp';
+      return null;
     }
   </script>
 </body>
