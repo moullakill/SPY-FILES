@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>🕵️‍♂️ Galerie Secrète</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #111;
+      color: lime;
+      text-align: center;
+    }
+    #password-screen, #gallery {
+      display: none;
+    }
+    #images {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px;
+    }
+    .img-box {
+      margin: 10px;
+      border: 2px solid lime;
+      padding: 5px;
+      background: black;
+    }
+    img {
+      max-width: 200px;
+      max-height: 200px;
+    }
+    input[type="password"] {
+      font-size: 18px;
+      padding: 5px;
+      background-color: black;
+      border: 2px solid lime;
+      color: lime;
+    }
+    button {
+      font-size: 16px;
+      padding: 8px;
+      margin-top: 10px;
+      background-color: black;
+      border: 2px solid lime;
+      color: lime;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🕵️ Galerie Secrète</h1>
+
+  <div id="password-screen">
+    <p>Entrez le mot de passe pour accéder à la galerie :</p>
+    <input type="password" id="password" placeholder="Mot de passe">
+    <br>
+    <button onclick="checkPassword()">Accéder</button>
+    <p id="error" style="color: red; display: none;">Mot de passe incorrect.</p>
+  </div>
+
+  <div id="gallery">
+    <h2>📁 Images récupérées</h2>
+    <div id="images"></div>
+  </div>
+
+  <script>
+    const CORRECT_PASSWORD = "coffee 007";
+    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
+
+    // Affiche le mot de passe au chargement
+    document.getElementById("password-screen").style.display = "block";
+
+    function checkPassword() {
+      const pwd = document.getElementById("password").value;
+      if (pwd === CORRECT_PASSWORD) {
+        document.getElementById("password-screen").style.display = "none";
+        document.getElementById("gallery").style.display = "block";
+        loadImages();
+      } else {
+        document.getElementById("error").style.display = "block";
+      }
+    }
+
+    async function loadImages() {
+      try {
+        const res = await fetch(GITHUB_RAW_URL);
+        const text = await res.text();
+        const lines = text.trim().split("\n");
+
+        lines.forEach(line => {
+          const [uuid, b64] = line.split(":", 2);
+          if (b64) {
+            const img = document.createElement("img");
+            img.src = `data:image/png;base64,${b64}`;
+
+            const box = document.createElement("div");
+            box.className = "img-box";
+            box.title = uuid;
+            box.appendChild(img);
+
+            document.getElementById("images").appendChild(box);
+          }
+        });
+      } catch (err) {
+        console.error("Erreur chargement GitHub :", err);
+      }
+    }
+  </script>
+</body>
+</html>
