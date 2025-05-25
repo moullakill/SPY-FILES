@@ -1,79 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>SPY GALLERY</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPY TERMINAL</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    input, button {
+      background: black;
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+    input::placeholder {
+      color: #00ff00;
+      opacity: 0.5;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .gallery img {
+      width: 100%;
+      border: 1px solid #00ff00;
+      border-radius: 4px;
+    }
+    .logo {
+      max-width: 120px;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
-  <div class="min-h-screen flex items-center justify-center p-4" id="auth-section">
-    <div class="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
-      <h2 class="text-2xl font-bold mb-4">Accès à la Galerie</h2>
-      <input type="password" id="password" placeholder="Mot de passe"
-             class="w-full p-2 rounded mb-4 text-black" />
-      <button onclick="checkPassword()" class="bg-blue-600 hover:bg-blue-700 w-full py-2 rounded text-white">
-        Accéder
-      </button>
-      <p id="error" class="text-red-500 mt-3 hidden">Mot de passe incorrect.</p>
-    </div>
+<body>
+  <div id="auth" class="centered">
+    <img class="logo" src="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png" alt="logo">
+    <h1>> ACCÈS À LA GALERIE SÉCURISÉE</h1>
+    <input type="password" id="password" placeholder="Entrer le mot de passe..." />
+    <button onclick="verifyPassword()">VALIDER</button>
+    <p id="error" style="color: red; display: none;">Mot de passe incorrect.</p>
   </div>
 
-  <div id="gallery-section" class="hidden p-6">
-    <h1 class="text-3xl font-bold mb-6 text-center">🕵️‍♂️ Spy Gallery</h1>
-    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+  <div id="gallery-section" class="centered" style="display:none;">
+    <h2>> GALERIE D’IMAGES DÉCODÉES</h2>
+    <div id="gallery" class="gallery"></div>
   </div>
 
   <script>
-    const PASSWORD = "coffee 007"; // ici en clair, à ne pas exposer pour un usage sérieux
-    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
+    const PASSWORD = "coffee 007";
+    const LOG_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
 
-    function checkPassword() {
-      const input = document.getElementById('password').value.trim();
+    function verifyPassword() {
+      const input = document.getElementById("password").value.trim();
       if (input === PASSWORD) {
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('gallery-section').classList.remove('hidden');
-        loadGallery();
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("gallery-section").style.display = "flex";
+        loadImages();
       } else {
-        document.getElementById('error').classList.remove('hidden');
+        document.getElementById("error").style.display = "block";
       }
     }
 
-    async function loadGallery() {
+    async function loadImages() {
       try {
-        const res = await fetch(GITHUB_RAW_URL);
-        const text = await res.text();
+        const response = await fetch(LOG_URL);
+        const text = await response.text();
         const lines = text.split('\n');
-        const gallery = document.getElementById('gallery');
-        const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
+        const gallery = document.getElementById("gallery");
         lines.forEach(line => {
           if (!line.includes(':')) return;
+
           const [uid, base64] = line.split(':');
           const cleanBase64 = base64.trim();
+          const mime = detectMime(cleanBase64);
 
-          const mimeType = getMimeType(cleanBase64);
-          if (!mimeType) return;
-
-          const ext = mimeType.split('/')[1];
-          if (!validExtensions.includes(ext)) return;
-
-          const img = document.createElement('img');
-          img.src = `data:${mimeType};base64,${cleanBase64}`;
-          img.alt = uid;
-          img.className = "rounded-xl shadow-lg w-full object-cover h-64";
-          gallery.appendChild(img);
+          if (mime) {
+            const img = document.createElement("img");
+            img.src = `data:${mime};base64,${cleanBase64}`;
+            img.alt = uid;
+            gallery.appendChild(img);
+          }
         });
-      } catch (error) {
-        console.error("Erreur de chargement :", error);
+      } catch (e) {
+        console.error("Erreur de chargement : ", e);
       }
     }
 
-    function getMimeType(b64) {
-      if (b64.startsWith('/9j/')) return 'image/jpeg';
-      if (b64.startsWith('iVBOR')) return 'image/png';
-      if (b64.startsWith('R0lGOD')) return 'image/gif';
-      if (b64.startsWith('UklGR')) return 'image/webp';
+    function detectMime(b64) {
+      if (b64.startsWith("/9j/")) return "image/jpeg";
+      if (b64.startsWith("iVBOR")) return "image/png";
+      if (b64.startsWith("R0lGOD")) return "image/gif";
+      if (b64.startsWith("UklGR")) return "image/webp";
       return null;
     }
   </script>
