@@ -34,10 +34,45 @@
   </div>
 
   <script>
-  // Obfusqué avec https://obfuscator.io
-  (function(){
-    const _0x5d6b=[_0x5d6b[15]](2,_0x5d6b[21]))[_0x5d6b[16]]("");if(_0x1f89===_0x5d6b[6]){loadGallery();window[_0x5d6b[18]](_0x5d6b[0])[_0x5d6b[19]][_0x5d6b[20]]=_0x5d6b[21];window[_0x5d6b[18]](_0x5d6b[1])[_0x5d6b[19]][_0x5d6b[20]]=_0x5d6b[22]}else{window[_0x5d6b[18]](_0x5d6b[5])[_0x5d6b[4]]="Wrong password"}}window[_0x5d6b[18]](_0x5d6b[0])[_0x5d6b[19]][_0x5d6b[20]]=_0x5d6b[22];async function loadGallery(){const _0x2d1a=await fetch(_0x5d6b[23]);const _0x241c=await _0x2d1a.text();const _0x7dd6=_0x241c[_0x5d6b[24]]("\n")[_0x5d6b[25]](l=>l[_0x5d6b[26]]("img:"));for(const l of _0x7dd6){try{let _0x37b5=l[_0x5d6b[24]]("img:")[1][_0x5d6b[27]]();let _0x3b44=window[_0x5d6b[28]](_0x37b5);let _0x3a93=document[_0x5d6b[30]](_0x5d6b[29]);_0x3a93[_0x5d6b[31]]="gallery-img";_0x3a93[_0x5d6b[32]]="data:image/*;base64,"+_0x3b44;document[_0x5d6b[18]](_0x5d6b[33])[_0x5d6b[34]](_0x3a93)}catch(_){}}}
-  })();
+    const storedHash = "4fa4e0f5bb2c8cece450f2f5d62128a764e76d5540b0fa2e57b8b243546688d4"; // SHA-256 of "coffee 007"
+
+    document.getElementById("login").style.display = "block";
+
+    async function verify() {
+      const password = document.getElementById("pwd").value;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+      if (hashHex === storedHash) {
+        loadGallery();
+        document.getElementById("login").style.display = "none";
+        document.getElementById("gallery").style.display = "block";
+      } else {
+        document.getElementById("msg").textContent = "Wrong password";
+      }
+    }
+
+    async function loadGallery() {
+      const response = await fetch("https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt");
+      const text = await response.text();
+      const lines = text.split("\n").filter(line => line.startsWith("img:"));
+
+      for (const line of lines) {
+        try {
+          const base64 = line.split("img:")[1].trim();
+          const decoded = atob(base64); // Not strictly necessary here
+          const img = document.createElement("img");
+          img.className = "gallery-img";
+          img.src = "data:image/*;base64," + base64;
+          document.getElementById("images").appendChild(img);
+        } catch (err) {
+          console.error("Error decoding image:", err);
+        }
+      }
+    }
   </script>
 </body>
 </html>
