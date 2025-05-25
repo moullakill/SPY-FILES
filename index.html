@@ -1,75 +1,77 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>🕵️‍♂️ Galerie Secrète</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spy Gallery</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Courier New', Courier, monospace;
-      background-color: #111;
-      color: lime;
+      background-color: #000;
+      color: #0f0;
+      font-family: monospace;
       text-align: center;
+      margin: 0;
+      padding: 2rem;
     }
-    #password-screen, #gallery {
+    #password-screen {
+      margin-top: 10vh;
+    }
+    input {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    #error {
+      color: red;
+      margin-top: 1rem;
+    }
+    #gallery {
       display: none;
     }
     #images {
       display: flex;
       flex-wrap: wrap;
+      gap: 1rem;
       justify-content: center;
-      padding: 10px;
+      margin-top: 2rem;
     }
     .img-box {
-      margin: 10px;
-      border: 2px solid lime;
+      border: 1px solid #0f0;
       padding: 5px;
-      background: black;
+      max-width: 300px;
+      max-height: 300px;
+      overflow: hidden;
     }
-    img {
-      max-width: 200px;
-      max-height: 200px;
-    }
-    input[type="password"] {
-      font-size: 18px;
-      padding: 5px;
-      background-color: black;
-      border: 2px solid lime;
-      color: lime;
-    }
-    button {
-      font-size: 16px;
-      padding: 8px;
-      margin-top: 10px;
-      background-color: black;
-      border: 2px solid lime;
-      color: lime;
-      cursor: pointer;
+    .img-box img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
     }
   </style>
 </head>
 <body>
-  <h1>🕵️ Galerie Secrète</h1>
 
   <div id="password-screen">
-    <p>Entrez le mot de passe pour accéder à la galerie :</p>
-    <input type="password" id="password" placeholder="Mot de passe">
-    <br>
-    <button onclick="checkPassword()">Accéder</button>
-    <p id="error" style="color: red; display: none;">Mot de passe incorrect.</p>
+    <h2>Enter password to access the gallery</h2>
+    <input type="password" id="password" placeholder="Password" />
+    <br />
+    <button onclick="checkPassword()">Enter</button>
+    <div id="error" style="display: none;">Incorrect password.</div>
   </div>
 
   <div id="gallery">
-    <h2>📁 Images récupérées</h2>
+    <h1>🕵️ Spy Image Gallery 🕵️</h1>
     <div id="images"></div>
   </div>
 
   <script>
     const CORRECT_PASSWORD = "coffee 007";
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
-
-    // Affiche le mot de passe au chargement
-    document.getElementById("password-screen").style.display = "block";
 
     function checkPassword() {
       const pwd = document.getElementById("password").value;
@@ -88,11 +90,15 @@
         const text = await res.text();
         const lines = text.trim().split("\n");
 
-        lines.forEach(line => {
+        for (const line of lines) {
           const [uuid, b64] = line.split(":", 2);
-          if (b64) {
+          if (!uuid || !b64) continue;
+
+          const format = detectImageFormat(b64.trim());
+
+          if (format) {
             const img = document.createElement("img");
-            img.src = `data:image/png;base64,${b64}`;
+            img.src = `data:image/${format};base64,${b64.trim()}`;
 
             const box = document.createElement("div");
             box.className = "img-box";
@@ -101,11 +107,21 @@
 
             document.getElementById("images").appendChild(box);
           }
-        });
+        }
       } catch (err) {
-        console.error("Erreur chargement GitHub :", err);
+        console.error("Error loading images:", err);
       }
     }
+
+    function detectImageFormat(b64) {
+      if (b64.startsWith("/9j/")) return "jpeg";
+      if (b64.startsWith("iVBOR")) return "png";
+      if (b64.startsWith("R0lGOD")) return "gif";
+      if (b64.startsWith("Qk")) return "bmp";
+      if (b64.startsWith("SUkq")) return "tiff";
+      return null; // Unknown format
+    }
   </script>
+
 </body>
 </html>
