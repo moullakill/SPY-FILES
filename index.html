@@ -1,127 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Spy Gallery</title>
+  <meta charset="UTF-8">
+  <title>Gallery</title>
   <style>
     body {
-      background-color: #000;
-      color: #0f0;
-      font-family: monospace;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
       text-align: center;
       margin: 0;
-      padding: 2rem;
     }
-    #password-screen {
-      margin-top: 10vh;
-    }
-    input {
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      margin-top: 1rem;
-      cursor: pointer;
-    }
-    #error {
-      color: red;
-      margin-top: 1rem;
-    }
-    #gallery {
-      display: none;
-    }
-    #images {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-      margin-top: 2rem;
-    }
-    .img-box {
-      border: 1px solid #0f0;
-      padding: 5px;
+    #login, #gallery { display: none; }
+    .gallery-img {
       max-width: 300px;
-      max-height: 300px;
-      overflow: hidden;
-    }
-    .img-box img {
-      width: 100%;
-      height: auto;
-      object-fit: cover;
+      margin: 10px;
+      border: 3px solid #fff;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
-
-  <div id="password-screen">
-    <h2>Enter password to access the gallery</h2>
-    <input type="password" id="password" placeholder="Password" />
-    <br />
-    <button onclick="checkPassword()">Enter</button>
-    <div id="error" style="display: none;">Incorrect password.</div>
+  <div id="login">
+    <h2>Enter Password</h2>
+    <input type="password" id="pwd" placeholder="Password">
+    <button onclick="verify()">Access</button>
+    <p id="msg" style="color:red;"></p>
   </div>
 
   <div id="gallery">
-    <h1>🕵️ Spy Image Gallery 🕵️</h1>
+    <h1>Secret Gallery</h1>
     <div id="images"></div>
   </div>
 
   <script>
-    const CORRECT_PASSWORD = "coffee 007";
-    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
-
-    function checkPassword() {
-      const pwd = document.getElementById("password").value;
-      if (pwd === CORRECT_PASSWORD) {
-        document.getElementById("password-screen").style.display = "none";
-        document.getElementById("gallery").style.display = "block";
-        loadImages();
-      } else {
-        document.getElementById("error").style.display = "block";
-      }
-    }
-
-    async function loadImages() {
-      try {
-        const res = await fetch(GITHUB_RAW_URL);
-        const text = await res.text();
-        const lines = text.trim().split("\n");
-
-        for (const line of lines) {
-          const [uuid, b64] = line.split(":", 2);
-          if (!uuid || !b64) continue;
-
-          const format = detectImageFormat(b64.trim());
-
-          if (format) {
-            const img = document.createElement("img");
-            img.src = `data:image/${format};base64,${b64.trim()}`;
-
-            const box = document.createElement("div");
-            box.className = "img-box";
-            box.title = uuid;
-            box.appendChild(img);
-
-            document.getElementById("images").appendChild(box);
-          }
-        }
-      } catch (err) {
-        console.error("Error loading images:", err);
-      }
-    }
-
-    function detectImageFormat(b64) {
-      if (b64.startsWith("/9j/")) return "jpeg";
-      if (b64.startsWith("iVBOR")) return "png";
-      if (b64.startsWith("R0lGOD")) return "gif";
-      if (b64.startsWith("Qk")) return "bmp";
-      if (b64.startsWith("SUkq")) return "tiff";
-      return null; // Unknown format
-    }
+  // Obfusqué avec https://obfuscator.io
+  (function(){
+    const _0x5d6b=[_0x5d6b[15]](2,_0x5d6b[21]))[_0x5d6b[16]]("");if(_0x1f89===_0x5d6b[6]){loadGallery();window[_0x5d6b[18]](_0x5d6b[0])[_0x5d6b[19]][_0x5d6b[20]]=_0x5d6b[21];window[_0x5d6b[18]](_0x5d6b[1])[_0x5d6b[19]][_0x5d6b[20]]=_0x5d6b[22]}else{window[_0x5d6b[18]](_0x5d6b[5])[_0x5d6b[4]]="Wrong password"}}window[_0x5d6b[18]](_0x5d6b[0])[_0x5d6b[19]][_0x5d6b[20]]=_0x5d6b[22];async function loadGallery(){const _0x2d1a=await fetch(_0x5d6b[23]);const _0x241c=await _0x2d1a.text();const _0x7dd6=_0x241c[_0x5d6b[24]]("\n")[_0x5d6b[25]](l=>l[_0x5d6b[26]]("img:"));for(const l of _0x7dd6){try{let _0x37b5=l[_0x5d6b[24]]("img:")[1][_0x5d6b[27]]();let _0x3b44=window[_0x5d6b[28]](_0x37b5);let _0x3a93=document[_0x5d6b[30]](_0x5d6b[29]);_0x3a93[_0x5d6b[31]]="gallery-img";_0x3a93[_0x5d6b[32]]="data:image/*;base64,"+_0x3b44;document[_0x5d6b[18]](_0x5d6b[33])[_0x5d6b[34]](_0x3a93)}catch(_){}}}
+  })();
   </script>
-
 </body>
 </html>
