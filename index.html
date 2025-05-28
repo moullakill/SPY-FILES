@@ -6,6 +6,7 @@
   <title>SPY TERMINAL</title>
   <link rel="icon" href="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png">
   <style>
+    /* Base */
     body {
       margin: 0;
       padding: 0;
@@ -29,29 +30,99 @@
       margin-top: 10px;
       font-family: inherit;
       font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    input:focus, button:focus {
+      outline: none;
+    }
+    input:hover, button:hover {
+      border-color: #fff;
+      color: #fff;
     }
     input::placeholder {
       color: #00ff00;
       opacity: 0.5;
     }
+    
+    /* Gallery */
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1rem;
       margin-top: 2rem;
+      width: 90%;
+      max-width: 1200px;
     }
     .gallery img {
       width: 100%;
       border: 1px solid #00ff00;
       border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.3s ease, border-color 0.3s ease;
     }
+    .gallery img:hover {
+      transform: scale(1.05);
+      border-color: #fff;
+    }
+    
+    /* Logo */
     .logo {
       max-width: 120px;
       margin-bottom: 20px;
     }
+    
+    /* Modal Styles pour le zoom sur image */
+    #image-modal {
+      display: none; 
+      position: fixed; 
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.9);
+    }
+    #image-modal img {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90%;
+      transition: transform 0.3s ease;
+    }
+    #image-modal img:hover {
+      transform: scale(1.05);
+    }
+    .close-modal {
+      position: absolute;
+      top: 20px;
+      right: 35px;
+      color: #00ff00;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    .close-modal:hover {
+      color: #fff;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      input, button {
+        font-size: 0.9rem;
+        padding: 8px;
+      }
+      .close-modal {
+        font-size: 30px;
+        top: 10px;
+        right: 20px;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Section d'authentification -->
   <div id="auth" class="centered">
     <img class="logo" src="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png" alt="logo">
     <h1>> ACCÈS À LA GALERIE SÉCURISÉE</h1>
@@ -60,9 +131,16 @@
     <p id="error" style="color: red; display: none;">Mot de passe incorrect.</p>
   </div>
 
+  <!-- Section Galérie -->
   <div id="gallery-section" class="centered" style="display:none;">
     <h2>> GALERIE D’IMAGES DÉCODÉES</h2>
     <div id="gallery" class="gallery"></div>
+  </div>
+
+  <!-- Modal pour afficher l'image en gros plan -->
+  <div id="image-modal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <img id="modal-img" src="" alt="">
   </div>
 
   <script>
@@ -89,7 +167,6 @@
         const gallery = document.getElementById("gallery");
         lines.forEach(line => {
           if (!line.includes(':')) return;
-
           const [uid, base64] = line.split(':');
           const cleanBase64 = base64.trim();
           const mime = detectMime(cleanBase64);
@@ -98,6 +175,8 @@
             const img = document.createElement("img");
             img.src = `data:${mime};base64,${cleanBase64}`;
             img.alt = uid;
+            // Ajout d'un évènement au clic pour ouvrir la modal d'agrandissement
+            img.addEventListener('click', () => openModal(img.src, img.alt));
             gallery.appendChild(img);
           }
         });
@@ -113,6 +192,25 @@
       if (b64.startsWith("UklGR")) return "image/webp";
       return null;
     }
+
+    function openModal(src, alt) {
+      const modal = document.getElementById("image-modal");
+      const modalImg = document.getElementById("modal-img");
+      modalImg.src = src;
+      modalImg.alt = alt;
+      modal.style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("image-modal").style.display = "none";
+    }
+
+    // Permet de fermer la modal si l'utilisateur clique en dehors de l'image
+    document.getElementById("image-modal").addEventListener("click", function(e) {
+      if (e.target.id === "image-modal") {
+        closeModal();
+      }
+    });
   </script>
 </body>
 </html>
