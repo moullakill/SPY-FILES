@@ -6,7 +6,7 @@
   <title>SPY TERMINAL</title>
   <link rel="icon" href="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png">
   <style>
-    /* Base */
+    /* Styles de base */
     body {
       margin: 0;
       padding: 0;
@@ -50,7 +50,7 @@
       margin-bottom: 20px;
     }
     
-    /* Gallery */
+    /* Galerie */
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -70,14 +70,13 @@
       transform: scale(1.05);
       border-color: #fff;
     }
-    
     /* Logo */
     .logo {
       max-width: 120px;
       margin-bottom: 20px;
     }
     
-    /* Modal Styles pour le zoom sur image */
+    /* Modal pour le zoom sur image avec caption */
     #image-modal {
       display: none; 
       position: fixed; 
@@ -88,12 +87,15 @@
       height: 100%;
       overflow: auto;
       background-color: rgba(0, 0, 0, 0.9);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
     #image-modal img {
       margin: auto;
       display: block;
       max-width: 90%;
-      max-height: 90%;
+      max-height: 80%;
       transition: transform 0.3s ease;
     }
     #image-modal img:hover {
@@ -112,8 +114,13 @@
     .close-modal:hover {
       color: #fff;
     }
+    #modal-caption {
+      margin-top: 15px;
+      color: #00ff00;
+      font-size: 1.2rem;
+    }
     
-    /* Responsive adjustments */
+    /* Ajustements Responsive */
     @media (max-width: 600px) {
       input, button {
         font-size: 0.9rem;
@@ -123,6 +130,9 @@
         font-size: 30px;
         top: 10px;
         right: 20px;
+      }
+      #modal-caption {
+        font-size: 1rem;
       }
     }
   </style>
@@ -140,20 +150,24 @@
   <!-- Section Galerie -->
   <div id="gallery-section" class="centered" style="display:none;">
     <h2>> GALERIE D’IMAGES DÉCODÉES</h2>
-    <!-- Champ de recherche -->
-    <input type="text" id="searchInput" placeholder="Recherche par titre..." oninput="filterGallery()"/>
+    <!-- Champ de recherche pour titre et taille -->
+    <input type="text" id="searchInput" placeholder="Recherche par titre ou taille (ex: 1024x768)..." oninput="filterGallery()"/>
+    <!-- Bouton pour inverser l'ordre -->
+    <button onclick="reverseOrder()">Inverser l'ordre</button>
     <div id="gallery" class="gallery"></div>
   </div>
 
-  <!-- Modal pour afficher l'image en gros plan -->
+  <!-- Modal pour ajouter un zoom et afficher le nom -->
   <div id="image-modal">
     <span class="close-modal" onclick="closeModal()">&times;</span>
     <img id="modal-img" src="" alt="">
+    <div id="modal-caption"></div>
   </div>
 
   <script>
     const PASSWORD = "coffee 007";
     const LOG_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
+    let imagesData = []; // pour stocker les images chargées
 
     function verifyPassword() {
       const input = document.getElementById("password").value.trim();
@@ -170,11 +184,15 @@
       try {
         const response = await fetch(LOG_URL);
         const text = await response.text();
-        const lines = text.split('\n');
-
+        let lines = text.split('\n').filter(line => line.includes(':'));
+        // Inversion de l'ordre chronologique
+        lines = lines.reverse();
+        
         const gallery = document.getElementById("gallery");
+        gallery.innerHTML = "";
+        imagesData = [];
+        
         lines.forEach(line => {
-          if (!line.includes(':')) return;
           const [uid, base64] = line.split(':');
           const cleanBase64 = base64.trim();
           const mime = detectMime(cleanBase64);
@@ -182,12 +200,19 @@
           if (mime) {
             const img = document.createElement("img");
             img.src = `data:${mime};base64,${cleanBase64}`;
-            // Utilisation de uid à la fois pour alt et pour le data-title utilisé dans la recherche
             img.alt = uid;
             img.setAttribute("data-title", uid);
-            // Ajout d'un évènement au clic pour ouvrir la modal d'agrandissement
+            // Ajout d'un attribut de taille une fois l'image chargée
+            img.onload = function() {
+              const width = img.naturalWidth;
+              const height = img.naturalHeight;
+              const sizeStr = width + "x" + height;
+              img.setAttribute("data-size", sizeStr);
+            }
+            // Au clic, ouvre la modal et affiche le nom de l'image
             img.addEventListener('click', () => openModal(img.src, img.alt));
             gallery.appendChild(img);
+            imagesData.push(img);
           }
         });
       } catch (e) {
@@ -206,35 +231,45 @@
     function openModal(src, alt) {
       const modal = document.getElementById("image-modal");
       const modalImg = document.getElementById("modal-img");
+      const modalCaption = document.getElementById("modal-caption");
       modalImg.src = src;
       modalImg.alt = alt;
-      modal.style.display = "block";
+      modalCaption.innerText = alt;
+      modal.style.display = "flex";
     }
 
     function closeModal() {
       document.getElementById("image-modal").style.display = "none";
     }
 
-    // Permet de fermer la modal si l'utilisateur clique en dehors de l'image
+    // Fermer la modal si l'utilisateur clique en dehors de l'image
     document.getElementById("image-modal").addEventListener("click", function(e) {
       if (e.target.id === "image-modal") {
         closeModal();
       }
     });
 
-    // Fonction de filtrage de la galerie en fonction du champ de recherche
+    // Fonction de filtrage : recherche dans data-title et data-size
     function filterGallery() {
       const query = document.getElementById("searchInput").value.toLowerCase();
       const images = document.getElementById("gallery").getElementsByTagName("img");
-      for (let i = 0; i < images.length; i++) {
-        // On récupère l'attribut data-title de chaque image
-        const title = images[i].getAttribute("data-title").toLowerCase();
-        if (title.includes(query)) {
-          images[i].style.display = "";
+      for (let img of images) {
+        const title = img.getAttribute("data-title").toLowerCase();
+        const size = img.getAttribute("data-size") ? img.getAttribute("data-size").toLowerCase() : "";
+        if (title.includes(query) || size.includes(query)) {
+          img.style.display = "";
         } else {
-          images[i].style.display = "none";
+          img.style.display = "none";
         }
       }
+    }
+
+    // Fonction pour inverser l'ordre d'affichage de la galerie
+    function reverseOrder() {
+      const gallery = document.getElementById("gallery");
+      const images = Array.from(gallery.getElementsByTagName("img"));
+      gallery.innerHTML = "";
+      images.reverse().forEach(img => gallery.appendChild(img));
     }
   </script>
 </body>
