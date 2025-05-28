@@ -43,6 +43,12 @@
       color: #00ff00;
       opacity: 0.5;
     }
+    /* Style spécifique pour le champ de recherche */
+    #searchInput {
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
     
     /* Gallery */
     .gallery {
@@ -131,9 +137,11 @@
     <p id="error" style="color: red; display: none;">Mot de passe incorrect.</p>
   </div>
 
-  <!-- Section Galérie -->
+  <!-- Section Galerie -->
   <div id="gallery-section" class="centered" style="display:none;">
     <h2>> GALERIE D’IMAGES DÉCODÉES</h2>
+    <!-- Champ de recherche -->
+    <input type="text" id="searchInput" placeholder="Recherche par titre..." oninput="filterGallery()"/>
     <div id="gallery" class="gallery"></div>
   </div>
 
@@ -174,7 +182,9 @@
           if (mime) {
             const img = document.createElement("img");
             img.src = `data:${mime};base64,${cleanBase64}`;
+            // Utilisation de uid à la fois pour alt et pour le data-title utilisé dans la recherche
             img.alt = uid;
+            img.setAttribute("data-title", uid);
             // Ajout d'un évènement au clic pour ouvrir la modal d'agrandissement
             img.addEventListener('click', () => openModal(img.src, img.alt));
             gallery.appendChild(img);
@@ -211,6 +221,21 @@
         closeModal();
       }
     });
+
+    // Fonction de filtrage de la galerie en fonction du champ de recherche
+    function filterGallery() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const images = document.getElementById("gallery").getElementsByTagName("img");
+      for (let i = 0; i < images.length; i++) {
+        // On récupère l'attribut data-title de chaque image
+        const title = images[i].getAttribute("data-title").toLowerCase();
+        if (title.includes(query)) {
+          images[i].style.display = "";
+        } else {
+          images[i].style.display = "none";
+        }
+      }
+    }
   </script>
 </body>
 </html>
