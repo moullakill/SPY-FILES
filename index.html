@@ -1,115 +1,339 @@
-<script>
-  const PASSWORD = "coffee 007";
-  const LOG_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
-  let imagesData = []; // Pour stocker les images chargées et permettre le filtrage/inversion
-
-  function verifyPassword() {
-    const input = document.getElementById("password").value.trim();
-    if (input === PASSWORD) {
-      document.getElementById("auth").style.display = "none";
-      document.getElementById("gallery-section").style.display = "flex";
-      loadImages();
-    } else {
-      document.getElementById("error").style.display = "block";
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPY TERMINAL</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png">
+  <style>
+    /* Styles de base pour le corps de la page */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000; /* Fond noir */
+      color: #00ff00; /* Texte vert "terminal" */
+      font-family: 'Courier New', Courier, monospace; /* Police de caractères style console */
     }
-  }
 
-  async function loadImages() {
-    try {
-      const response = await fetch(LOG_URL);
-      if (!response.ok) {
-        console.error(`Erreur de chargement du fichier: ${response.status} ${response.statusText}`);
-        document.getElementById("gallery").innerHTML = "<p style='color: red;'>Erreur lors du chargement des données. Veuillez vérifier le fichier log.</p>";
-        return;
+    /* Styles pour centrer le contenu verticalement et horizontalement */
+    .centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh; /* Prend toute la hauteur de la fenêtre */
+      padding: 1rem;
+    }
+
+    /* Styles pour les champs de saisie et les boutons */
+    input, button {
+      background: black;
+      border: 1px solid #00ff00; /* Bordure verte */
+      color: #00ff00;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: inherit; /* Hérite la police du corps */
+      font-size: 1rem;
+      transition: all 0.3s ease; /* Transition douce pour les effets hover/focus */
+    }
+
+    /* Styles pour les états focus (quand l'élément est sélectionné) */
+    input:focus, button:focus {
+      outline: none; /* Supprime le contour par défaut du navigateur */
+    }
+
+    /* Styles pour les états hover (quand la souris passe dessus) */
+    input:hover, button:hover {
+      border-color: #fff; /* Bordure blanche */
+      color: #fff; /* Texte blanc */
+    }
+
+    /* Styles pour le placeholder des inputs */
+    input::placeholder {
+      color: #00ff00;
+      opacity: 0.5; /* Moins visible que le texte normal */
+    }
+
+    /* Style spécifique pour le champ de recherche */
+    #searchInput {
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    
+    /* Styles de la galerie d'images */
+    .gallery {
+      display: grid;
+      /* Colonnes responsives: 220px minimum, remplissage automatique */
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem; /* Espacement entre les images */
+      margin-top: 2rem;
+      width: 90%;
+      max-width: 1200px;
+    }
+
+    /* Styles des images dans la galerie */
+    .gallery img {
+      width: 100%;
+      border: 1px solid #00ff00;
+      border-radius: 4px;
+      cursor: pointer; /* Indique que l'image est cliquable */
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Effet au survol des images */
+    .gallery img:hover {
+      transform: scale(1.05); /* Zoom léger */
+      border-color: #fff;
+    }
+
+    /* Styles du logo */
+    .logo {
+      max-width: 120px;
+      margin-bottom: 20px;
+    }
+    
+    /* Styles du modal (fenêtre pop-up pour les images agrandies) */
+    #image-modal {
+      display: none; /* Caché par défaut */
+      position: fixed; /* Reste en place lors du défilement */
+      z-index: 100; /* Assure qu'il est au-dessus des autres éléments */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto; /* Permet le défilement si l'image est trop grande */
+      background-color: rgba(0, 0, 0, 0.9); /* Fond semi-transparent */
+      align-items: center; /* Centre le contenu horizontalement */
+      justify-content: center; /* Centre le contenu verticalement */
+      flex-direction: column;
+    }
+
+    /* Styles de l'image à l'intérieur du modal */
+    #image-modal img {
+      margin: auto; /* Centre l'image */
+      display: block;
+      max-width: 90%;
+      max-height: 80%;
+      transition: transform 0.3s ease;
+    }
+
+    /* Effet au survol de l'image dans le modal */
+    #image-modal img:hover {
+      transform: scale(1.05); /* Zoom léger */
+    }
+
+    /* Bouton de fermeture du modal */
+    .close-modal {
+      position: absolute;
+      top: 20px;
+      right: 35px;
+      color: #00ff00;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    /* Effet au survol du bouton de fermeture */
+    .close-modal:hover {
+      color: #fff;
+    }
+
+    /* Style de la légende (caption) de l'image dans le modal */
+    #modal-caption {
+      margin-top: 15px;
+      color: #00ff00;
+      font-size: 1.2rem;
+    }
+    
+    /* Ajustements Responsifs pour les écrans plus petits */
+    @media (max-width: 600px) {
+      input, button {
+        font-size: 0.9rem;
+        padding: 8px;
       }
-      const text = await response.text();
-      let lines = text.split('\n').filter(line => line.includes(':'));
-      lines = lines.reverse(); // Pour les plus récentes en premier
+      .close-modal {
+        font-size: 30px;
+        top: 10px;
+        right: 20px;
+      }
+      #modal-caption {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="auth" class="centered">
+    <img class="logo" src="https://raw.githubusercontent.com/moullakill/SPY-FILES/main/logo.png" alt="logo">
+    <h1>> ACCÈS À LA GALERIE SÉCURISÉE</h1>
+    <input type="password" id="password" placeholder="Entrer le mot de passe..." />
+    <button onclick="verifyPassword()">VALIDER</button>
+    <p id="error" style="color: red; display: none;">Mot de passe incorrect.</p>
+  </div>
 
-      const gallery = document.getElementById("gallery");
-      gallery.innerHTML = ""; // Vide la galerie au début du chargement
-      imagesData = []; // Réinitialise les données des images pour le nouveau chargement
+  <div id="gallery-section" class="centered" style="display:none;">
+    <h2>> GALERIE D’IMAGES DÉCODÉES</h2>
+    <input type="text" id="searchInput" placeholder="Recherche par titre ou taille (ex: 1024x768)..." oninput="filterGallery()"/>
+    <button onclick="reverseOrder()">Inverser l'ordre</button>
+    <div id="gallery" class="gallery"></div>
+  </div>
 
-      // Parcours chaque ligne et ajoute l'image dès qu'elle est prête
-      for (const line of lines) { // Utilisation de for...of pour permettre await si nécessaire, mais forEach est aussi OK ici
-        const [uid, base64] = line.split(':');
-        const cleanBase64 = base64.trim();
-        const mime = detectMime(cleanBase64);
+  <div id="image-modal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <img id="modal-img" src="" alt="">
+    <div id="modal-caption"></div>
+  </div>
 
-        if (mime) {
-          const img = document.createElement("img");
-          img.src = `data:${mime};base64,${cleanBase64}`;
-          img.alt = uid;
-          img.setAttribute("data-title", uid);
-          
-          // Récupère la taille de l'image une fois chargée
-          img.onload = function() {
-            const width = img.naturalWidth;
-            const height = img.naturalHeight;
-            const sizeStr = width + "x" + height;
-            img.setAttribute("data-size", sizeStr);
+  <script>
+    const PASSWORD = "coffee 007";
+    const LOG_URL = "https://raw.githubusercontent.com/moullakill/SPY-FILES/main/machine_log.txt";
+    let imagesData = []; // Pour stocker les images chargées et permettre le filtrage/inversion
+
+    /**
+     * Vérifie le mot de passe saisi par l'utilisateur.
+     * Si correct, affiche la galerie et charge les images.
+     */
+    function verifyPassword() {
+      const input = document.getElementById("password").value.trim();
+      if (input === PASSWORD) {
+        document.getElementById("auth").style.display = "none"; // Cache la section d'authentification
+        document.getElementById("gallery-section").style.display = "flex"; // Affiche la section de la galerie
+        loadImages(); // Lance le chargement des images
+      } else {
+        document.getElementById("error").style.display = "block"; // Affiche le message d'erreur
+      }
+    }
+
+    /**
+     * Charge les données d'images depuis le fichier LOG_URL,
+     * les décode et les affiche dans la galerie au fur et à mesure.
+     */
+    async function loadImages() {
+      try {
+        const response = await fetch(LOG_URL);
+        // Vérifie si la réponse est OK (statut 200)
+        if (!response.ok) {
+            console.error(`Erreur de chargement du fichier: ${response.status} ${response.statusText}`);
+            // Affiche un message à l'utilisateur ou retente
+            document.getElementById("gallery").innerHTML = "<p style='color: red;'>Erreur lors du chargement des données. Veuillez vérifier le fichier log et votre connexion.</p>";
+            return; // Arrête l'exécution si le fichier n'est pas accessible
+        }
+        const text = await response.text();
+        // Sépare les lignes, filtre celles qui contiennent ':'
+        let lines = text.split('\n').filter(line => line.includes(':'));
+        // Inverse l'ordre pour afficher les plus récentes en premier
+        lines = lines.reverse();
+        
+        const gallery = document.getElementById("gallery");
+        gallery.innerHTML = ""; // Vide la galerie au début du chargement
+        imagesData = []; // Réinitialise les données des images pour le nouveau chargement
+
+        // Parcours chaque ligne et ajoute l'image dès qu'elle est prête
+        for (const line of lines) {
+          const [uid, base64] = line.split(':');
+          const cleanBase64 = base64.trim(); // Supprime les espaces blancs inutiles
+          const mime = detectMime(cleanBase64); // Détecte le type MIME de l'image
+
+          if (mime) {
+            const img = document.createElement("img");
+            img.src = `data:${mime};base64,${cleanBase64}`; // Définit la source de l'image
+            img.alt = uid; // Définit le texte alternatif
+            img.setAttribute("data-title", uid); // Stocke le titre pour la recherche
+            
+            // Une fois l'image chargée, récupère sa taille naturelle pour la recherche
+            img.onload = function() {
+              const width = img.naturalWidth;
+              const height = img.naturalHeight;
+              const sizeStr = width + "x" + height;
+              img.setAttribute("data-size", sizeStr); // Stocke la taille pour la recherche
+            }
+            // Ajoute un écouteur d'événement pour ouvrir le modal au clic
+            img.addEventListener('click', () => openModal(img.src, img.alt));
+            
+            // C'est ici que l'image est ajoutée AU FUR ET À MESURE
+            gallery.appendChild(img);
+            imagesData.push(img); // Ajoute à la liste pour le filtrage/inversion
           }
-          img.addEventListener('click', () => openModal(img.src, img.alt));
-          
-          // C'est ici que l'image est ajoutée AU FUR ET À MESURE
-          gallery.appendChild(img);
-          imagesData.push(img); // Ajoute à la liste pour le filtrage/inversion
+        }
+      } catch (e) {
+        console.error("Erreur de chargement ou de traitement des images : ", e);
+        document.getElementById("gallery").innerHTML = "<p style='color: red;'>Une erreur inattendue est survenue lors du chargement des images. Vérifiez la console pour plus de détails.</p>";
+      }
+    }
+
+    /**
+     * Détecte le type MIME d'une image Base64 à partir de son préfixe.
+     * @param {string} b64 - La chaîne Base64 de l'image.
+     * @returns {string|null} Le type MIME (ex: "image/jpeg") ou null si non reconnu.
+     */
+    function detectMime(b64) {
+      if (b64.startsWith("/9j/")) return "image/jpeg";
+      if (b64.startsWith("iVBOR")) return "image/png";
+      if (b64.startsWith("R0lGOD")) return "image/gif";
+      if (b64.startsWith("UklGR")) return "image/webp";
+      return null;
+    }
+
+    /**
+     * Ouvre le modal d'image avec l'image et sa légende.
+     * @param {string} src - L'URL de l'image (data URL Base64).
+     * @param {string} alt - La légende de l'image.
+     */
+    function openModal(src, alt) {
+      const modal = document.getElementById("image-modal");
+      const modalImg = document.getElementById("modal-img");
+      const modalCaption = document.getElementById("modal-caption");
+      modalImg.src = src;
+      modalImg.alt = alt;
+      modalCaption.innerText = alt; // Affiche la légende
+      modal.style.display = "flex"; // Affiche le modal
+    }
+
+    /**
+     * Ferme le modal d'image.
+     */
+    function closeModal() {
+      document.getElementById("image-modal").style.display = "none";
+    }
+
+    // Ferme la modal si l'utilisateur clique en dehors de l'image (sur le fond sombre)
+    document.getElementById("image-modal").addEventListener("click", function(e) {
+      if (e.target.id === "image-modal") { // Vérifie si le clic est sur le fond du modal
+        closeModal();
+      }
+    });
+
+    /**
+     * Filtre les images de la galerie en fonction du texte de recherche.
+     * La recherche s'effectue sur le titre (UID) et la taille (widthxheight).
+     */
+    function filterGallery() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      // Utilise imagesData pour le filtrage, car c'est la source de toutes les images
+      for (let img of imagesData) { 
+        const title = img.getAttribute("data-title").toLowerCase();
+        const size = img.getAttribute("data-size") ? img.getAttribute("data-size").toLowerCase() : "";
+        if (title.includes(query) || size.includes(query)) {
+          img.style.display = ""; // Affiche l'image
+        } else {
+          img.style.display = "none"; // Cache l'image
         }
       }
-    } catch (e) {
-      console.error("Erreur de chargement ou de traitement des images : ", e);
-      document.getElementById("gallery").innerHTML = "<p style='color: red;'>Une erreur inattendue est survenue lors du chargement des images.</p>";
     }
-  }
 
-  function detectMime(b64) {
-    if (b64.startsWith("/9j/")) return "image/jpeg";
-    if (b64.startsWith("iVBOR")) return "image/png";
-    if (b64.startsWith("R0lGOD")) return "image/gif";
-    if (b64.startsWith("UklGR")) return "image/webp";
-    return null;
-  }
-
-  function openModal(src, alt) {
-    const modal = document.getElementById("image-modal");
-    const modalImg = document.getElementById("modal-img");
-    const modalCaption = document.getElementById("modal-caption");
-    modalImg.src = src;
-    modalImg.alt = alt;
-    modalCaption.innerText = alt;
-    modal.style.display = "flex";
-  }
-
-  function closeModal() {
-    document.getElementById("image-modal").style.display = "none";
-  }
-
-  document.getElementById("image-modal").addEventListener("click", function(e) {
-    if (e.target.id === "image-modal") {
-      closeModal();
+    /**
+     * Inverse l'ordre d'affichage des images dans la galerie.
+     */
+    function reverseOrder() {
+      const gallery = document.getElementById("gallery");
+      // Inverse imagesData directement
+      imagesData.reverse(); 
+      gallery.innerHTML = ""; // Vide la galerie
+      // Ré-ajoute les images dans le nouvel ordre
+      imagesData.forEach(img => gallery.appendChild(img)); // Ré-ajoute dans l'ordre inversé
     }
-  });
-
-  function filterGallery() {
-    const query = document.getElementById("searchInput").value.toLowerCase();
-    // Utilise imagesData pour le filtrage, car c'est la source de toutes les images
-    for (let img of imagesData) { 
-      const title = img.getAttribute("data-title").toLowerCase();
-      const size = img.getAttribute("data-size") ? img.getAttribute("data-size").toLowerCase() : "";
-      if (title.includes(query) || size.includes(query)) {
-        img.style.display = "";
-      } else {
-        img.style.display = "none";
-      }
-    }
-  }
-
-  function reverseOrder() {
-    const gallery = document.getElementById("gallery");
-    // Inverse imagesData directement
-    imagesData.reverse(); 
-    gallery.innerHTML = ""; // Vide la galerie
-    // Ré-ajoute les images dans le nouvel ordre
-    imagesData.forEach(img => gallery.appendChild(img));
-  }
-</script>
+  </script>
+</body>
+</html>
